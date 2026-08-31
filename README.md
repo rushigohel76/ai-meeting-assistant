@@ -58,6 +58,26 @@ GET http://localhost:8000/health
 
 It returns success only when the API can connect to PostgreSQL.
 
+## Local Webhook Testing
+
+Meeting BaaS cannot reach `localhost` directly when it sends bot lifecycle webhooks. For local development, expose the backend with ngrok or a similar tunnel:
+
+```bash
+ngrok http 8000
+```
+
+Set `WEBHOOK_BASE_URL` in `backend/.env` to the public HTTPS forwarding URL, without a trailing path:
+
+```text
+WEBHOOK_BASE_URL=https://your-ngrok-url.ngrok-free.app
+```
+
+Bot creation will send Meeting BaaS this callback URL:
+
+```text
+https://your-ngrok-url.ngrok-free.app/api/webhooks/meetingbaas
+```
+
 ## Frontend Setup
 
 Requires Node.js 18+.
@@ -81,15 +101,32 @@ Set `VITE_API_BASE_URL` in `frontend/.env` to the backend URL.
 
 Backend variables are listed in `.env.example`:
 
+Summarization uses Gemini when `GEMINI_API_KEY` is set. Anthropic settings are only a fallback.
+
 ```text
 DATABASE_URL
-RECALL_AI_API_KEY
+MEETING_BAAS_API_KEY
+MEETING_BAAS_BASE_URL
+MEETING_BAAS_WEBHOOK_SECRET
+WEBHOOK_BASE_URL
 DEEPGRAM_API_KEY
+DEEPGRAM_BASE_URL
+MAX_TRANSCRIPTION_AUDIO_DURATION_SECONDS
 ANTHROPIC_API_KEY
+ANTHROPIC_BASE_URL
+ANTHROPIC_MODEL
+ANTHROPIC_MAX_OUTPUT_TOKENS
+GEMINI_API_KEY
+GEMINI_BASE_URL
+GEMINI_MODEL
+GEMINI_MAX_OUTPUT_TOKENS
+MAX_SUMMARY_CHUNK_CHARS
 JWT_SECRET_KEY
 RESEND_API_KEY
+RESEND_BASE_URL
+RESEND_FROM_EMAIL
+FRONTEND_BASE_URL
 CORS_ORIGINS
-RECALL_WEBHOOK_SECRET
 ```
 
 Frontend variables are listed in `frontend/.env.example`:
