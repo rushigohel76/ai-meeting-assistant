@@ -24,12 +24,14 @@ meeting_status = postgresql.ENUM(
     "completed",
     "failed",
     name="meeting_status",
+    create_type=False,
 )
 
 
 def upgrade() -> None:
     bind = op.get_bind()
     meeting_status.create(bind, checkfirst=True)
+
 
     op.create_table(
         "users",

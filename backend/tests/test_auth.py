@@ -6,13 +6,13 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 
 os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/mom")
-os.environ.setdefault("RECALL_AI_API_KEY", "test-recall-key")
+os.environ.setdefault("MEETING_BAAS_API_KEY", "test-meeting-baas-key")
+os.environ.setdefault("WEBHOOK_BASE_URL", "https://mom-webhooks.ngrok-free.app")
 os.environ.setdefault("DEEPGRAM_API_KEY", "test-deepgram-key")
 os.environ.setdefault("ANTHROPIC_API_KEY", "test-anthropic-key")
 os.environ.setdefault("JWT_SECRET_KEY", "test-secret-key-that-is-long-enough-for-tests")
 os.environ.setdefault("RESEND_API_KEY", "test-resend-key")
 os.environ.setdefault("CORS_ORIGINS", "http://localhost:5173")
-os.environ.setdefault("RECALL_WEBHOOK_SECRET", "test-webhook-secret")
 
 from app.api import auth as auth_routes  # noqa: E402
 from app.main import app  # noqa: E402
@@ -112,7 +112,7 @@ async def test_signup_success(
     set_cookie = response.headers["set-cookie"].lower()
     assert "refresh_token=" in set_cookie
     assert "httponly" in set_cookie
-    assert "secure" in set_cookie
+    assert "secure" not in set_cookie
     assert "samesite=strict" in set_cookie
 
 

@@ -42,6 +42,12 @@ class User(Base):
         nullable=False,
     )
 
+    # Password reset fields
+    reset_otp_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    reset_otp_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
     meetings: Mapped[list[Meeting]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",

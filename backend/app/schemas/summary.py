@@ -3,6 +3,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
+from app.schemas.transcript import TranscriptRead
+
 
 class ActionItem(BaseModel):
     task: str
@@ -27,3 +29,8 @@ class SummaryRead(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class MeetingSummaryRead(BaseModel):
+    summary: SummaryRead
+    transcript: TranscriptRead

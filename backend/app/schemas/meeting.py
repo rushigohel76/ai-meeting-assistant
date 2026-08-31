@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, HttpUrl
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl
 
 from app.models.meeting import MeetingStatus
 
@@ -10,6 +10,19 @@ class MeetingCreate(BaseModel):
     user_id: uuid.UUID
     meeting_url: HttpUrl
     title: str | None = None
+
+
+class MeetingCreateRequest(BaseModel):
+    meeting_url: str = Field(min_length=1, max_length=2048)
+    title: str | None = None
+
+
+class MeetingSummaryEmailRequest(BaseModel):
+    email: EmailStr
+
+
+class MeetingSummaryEmailResponse(BaseModel):
+    status: str
 
 
 class MeetingUpdate(BaseModel):
