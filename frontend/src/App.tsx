@@ -1,21 +1,39 @@
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AuthProvider } from "./context/AuthContext";
+import { ToastProvider } from "./context/ToastContext";
+import { DashboardPage } from "./pages/DashboardPage";
+import { LoginPage } from "./pages/LoginPage";
+import { MeetingDetailPage } from "./pages/MeetingDetailPage";
+import { SignupPage } from "./pages/SignupPage";
+import PasswordResetRequestPage from "./pages/PasswordResetRequestPage";
+import PasswordResetConfirmPage from "./pages/PasswordResetConfirmPage";
 
 export function App() {
   return (
-    <main className="min-h-screen bg-zinc-50 px-6 py-10 text-zinc-950">
-      <section className="mx-auto flex max-w-3xl flex-col gap-6">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-wide text-teal-700">
-            Full-stack scaffold
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold">MOM</h1>
-        </div>
+    <BrowserRouter>
+      <Routes>
+        <Route element={<ProtectedRoute />}>
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/meetings/:id" element={<MeetingDetailPage />} />
+        </Route>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/password-reset" element={<PasswordResetRequestPage />} />
+        <Route path="/password-reset/confirm" element={<PasswordResetConfirmPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
 
-        <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-zinc-600">API base URL</p>
-          <p className="mt-2 font-mono text-sm text-zinc-900">{apiBaseUrl}</p>
-        </div>
-      </section>
-    </main>
+export function AppProviders() {
+  return (
+    <ToastProvider>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </ToastProvider>
   );
 }
