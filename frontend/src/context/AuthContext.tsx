@@ -32,7 +32,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [status, setStatus] = useState<AuthStatus>("checking");
+  const [status, setStatus] = useState<AuthStatus>("unauthenticated");
   // Track an in-flight refresh promise to deduplicate parallel refresh attempts
   const refreshPromiseRef = useRef<Promise<string | null> | null>(null);
   // If a refresh has definitively failed (no session), avoid retrying until user logs in
@@ -90,10 +90,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
     });
   }, [accessToken, logout, refreshAccessToken]);
-
-  useEffect(() => {
-    refreshAccessToken();
-  }, [refreshAccessToken]);
 
   const login = useCallback(async (email: string, password: string) => {
     const tokenResponse = await loginRequest(email, password);

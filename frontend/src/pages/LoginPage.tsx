@@ -113,16 +113,44 @@ type FieldProps = {
 };
 
 function Field({ label, type, value, onChange, error, autoComplete }: FieldProps) {
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const isPassword = type === "password";
+
   return (
     <label className="block">
       <span className="text-sm font-medium text-zinc-800">{label}</span>
-      <input
-        autoComplete={autoComplete}
-        className="mt-2 h-11 w-full rounded-lg border border-zinc-300 bg-white px-3 text-sm outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
-        onChange={(event) => onChange(event.target.value)}
-        type={type}
-        value={value}
-      />
+      <span className="relative block mt-2">
+        <input
+          autoComplete={autoComplete}
+          className="h-11 w-full rounded-lg border border-zinc-300 bg-white px-3 pr-11 text-sm outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-100"
+          onChange={(event) => onChange(event.target.value)}
+          type={isPassword ? (passwordVisible ? "text" : "password") : type}
+          value={value}
+        />
+        {isPassword && (
+          <button
+            aria-label={passwordVisible ? "Hide password" : "Show password"}
+            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-zinc-500 transition hover:text-zinc-800"
+            onClick={() => setPasswordVisible((visible) => !visible)}
+            type="button"
+          >
+            <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+              {passwordVisible ? (
+                <>
+                  <path d="M3 3l18 18" />
+                  <path d="M10.6 10.6a2 2 0 002.8 2.8" />
+                  <path d="M9.9 4.2A10.7 10.7 0 0112 4c5 0 8.5 4 9.8 6a18.7 18.7 0 01-3.1 3.5M6.1 6.1C3.8 7.5 2.4 9.4 2.2 10c1.3 2 4.8 6 9.8 6 1 0 2-.2 2.8-.5" />
+                </>
+              ) : (
+                <>
+                  <path d="M2.2 12C3.5 10 7 6 12 6s8.5 4 9.8 6c-1.3 2-4.8 6-9.8 6s-8.5-4-9.8-6z" />
+                  <circle cx="12" cy="12" r="2.5" />
+                </>
+              )}
+            </svg>
+          </button>
+        )}
+      </span>
       {error && <span className="mt-1 block text-sm text-red-700">{error}</span>}
     </label>
   );
