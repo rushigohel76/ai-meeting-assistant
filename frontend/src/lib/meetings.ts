@@ -12,7 +12,16 @@ export function isActiveStatus(status: MeetingStatus) {
 }
 
 export function getMeetingTitle(meeting: Meeting) {
-  return meeting.title?.trim() || getHostname(meeting.meeting_url) || "Untitled meeting";
+  if (meeting.title?.trim()) {
+    return meeting.title.trim();
+  }
+
+  const hostname = getHostname(meeting.meeting_url);
+  if (hostname === "meet.google.com") {
+    return "Meetings";
+  }
+
+  return hostname || "Untitled meeting";
 }
 
 export function getStatusLabel(status: MeetingStatus) {

@@ -14,7 +14,8 @@ export function StatusBadge({ status }: { status: MeetingStatus }) {
   return (
     <span
       className={[
-        "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium",
+        "meeting-status inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium",
+        `status-${status}`,
         statusClasses[status],
       ].join(" ")}
     >
