@@ -120,10 +120,10 @@ export function MeetingDetailPage() {
   }
 
   return (
-    <AppLayout>
-      <section className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-8">
-        <Link className="text-sm font-medium text-teal-700 hover:text-teal-800" to="/">
-          Back to dashboard
+    <AppLayout variant="meeting">
+      <section className="meeting-page mx-auto flex max-w-6xl flex-col gap-6 px-6 py-8">
+        <Link className="meeting-back text-sm font-medium text-teal-700 hover:text-teal-800" to="/">
+          <span aria-hidden="true">←</span> Back to dashboard
         </Link>
 
         {loading ? (
@@ -132,12 +132,13 @@ export function MeetingDetailPage() {
           <ErrorPanel message={error} />
         ) : meeting ? (
           <>
-            <header className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+            <header className="meeting-hero rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0">
+                <div className="meeting-hero-copy min-w-0">
+                  <p className="meeting-kicker"><span /> MEETING NOTES</p>
                   <h1 className="truncate text-3xl font-semibold">{title}</h1>
-                  <p className="mt-2 text-sm text-zinc-600">
-                    Created {formatDateTime(meeting.created_at)}
+                  <p className="meeting-created mt-2 text-sm text-zinc-600">
+                    <span aria-hidden="true">◷</span> Captured {formatDateTime(meeting.created_at)}
                   </p>
                 </div>
                 <StatusBadge status={meeting.status} />
@@ -172,13 +173,13 @@ function CompletedMeeting({ summaryData }: { summaryData: MeetingSummaryResponse
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
       <section className="flex flex-col gap-6">
-        <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold">Summary</h2>
-          <p className="mt-3 text-sm leading-6 text-zinc-700">
+        <div className="meeting-panel summary-panel rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+          <div className="meeting-section-title"><span className="meeting-section-icon">✦</span><div><p>THE CONVERSATION</p><h2>Summary</h2></div></div>
+          <p className="summary-copy mt-4 text-sm leading-6 text-zinc-700">
             {summaryData.summary.summary_text}
           </p>
-          <h3 className="mt-6 text-sm font-semibold text-zinc-950">Key points</h3>
-          <ul className="mt-3 space-y-2 text-sm leading-6 text-zinc-700">
+          <h3 className="key-points-heading mt-6 text-sm font-semibold text-zinc-950">Key points</h3>
+          <ul className="key-points mt-3 space-y-2 text-sm leading-6 text-zinc-700">
             {summaryData.summary.key_points.map((point) => (
               <li className="flex gap-2" key={point}>
                 <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-teal-600" />
@@ -188,8 +189,8 @@ function CompletedMeeting({ summaryData }: { summaryData: MeetingSummaryResponse
           </ul>
         </div>
 
-        <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold">Full transcript</h2>
+        <div className="meeting-panel transcript-panel rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+          <div className="meeting-section-title"><span className="meeting-section-icon cyan">≋</span><div><p>THE FULL RECORD</p><h2>Transcript</h2></div></div>
           <div className="mt-4 max-h-[36rem] space-y-4 overflow-y-auto pr-2">
             {summaryData.transcript.raw_transcript_json.map((segment, index) => (
               <TranscriptRow key={`${segment.start_time}-${index}`} segment={segment} />
@@ -201,15 +202,15 @@ function CompletedMeeting({ summaryData }: { summaryData: MeetingSummaryResponse
       <aside className="flex flex-col gap-6">
         <EmailSummaryPanel meetingId={summaryData.summary.meeting_id} />
 
-        <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold">Action items</h2>
+        <div className="meeting-panel action-panel rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+          <div className="meeting-section-title"><span className="meeting-section-icon cyan">✓</span><div><p>WHAT'S NEXT</p><h2>Action items</h2></div></div>
           {actionItems.length === 0 ? (
             <p className="mt-3 text-sm text-zinc-600">No action items captured.</p>
           ) : (
             <div className="mt-4 space-y-3">
               {actionItems.map((item, index) => (
                 <label
-                  className="flex cursor-pointer gap-3 rounded-lg border border-zinc-200 p-3 transition hover:bg-zinc-50"
+                  className="meeting-action-item flex cursor-pointer gap-3 rounded-lg border border-zinc-200 p-3 transition hover:bg-zinc-50"
                   key={`${item.task}-${index}`}
                 >
                   <input
@@ -237,8 +238,8 @@ function CompletedMeeting({ summaryData }: { summaryData: MeetingSummaryResponse
           )}
         </div>
 
-        <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold">Decisions</h2>
+        <div className="meeting-panel decisions-panel rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+          <div className="meeting-section-title"><span className="meeting-section-icon violet">◇</span><div><p>AGREED TOGETHER</p><h2>Decisions</h2></div></div>
           {summaryData.summary.decisions.length === 0 ? (
             <p className="mt-3 text-sm text-zinc-600">No decisions captured.</p>
           ) : (
@@ -293,8 +294,8 @@ function EmailSummaryPanel({ meetingId }: { meetingId: string }) {
   }
 
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-      <h2 className="text-lg font-semibold">Email summary</h2>
+    <div className="meeting-panel email-panel rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+      <div className="meeting-section-title"><span className="meeting-section-icon violet">↗</span><div><p>SHARE THE RECAP</p><h2>Email summary</h2></div></div>
       <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
         <label className="block">
           <span className="sr-only">Recipient email</span>
@@ -310,7 +311,7 @@ function EmailSummaryPanel({ meetingId }: { meetingId: string }) {
           />
         </label>
         {formError ? (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+          <div className="meeting-form-error rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
             {formError}
           </div>
         ) : null}
@@ -332,8 +333,8 @@ function TranscriptOnlyMeeting({
   transcriptData: MeetingTranscriptResponse;
 }) {
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-      <h2 className="text-lg font-semibold">Full transcript</h2>
+    <div className="meeting-panel transcript-panel rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+      <div className="meeting-section-title"><span className="meeting-section-icon cyan">≋</span><div><p>THE FULL RECORD</p><h2>Transcript</h2></div></div>
       <div className="mt-4 max-h-[36rem] space-y-4 overflow-y-auto pr-2">
         {transcriptData.raw_transcript_json.map((segment, index) => (
           <TranscriptRow key={`${segment.start_time}-${index}`} segment={segment} />
@@ -354,7 +355,7 @@ function validateEmail(value: string) {
 
 function TranscriptRow({ segment }: { segment: TranscriptSegment }) {
   return (
-    <article className="grid gap-2 rounded-lg border border-zinc-200 p-3 sm:grid-cols-[8rem_1fr]">
+    <article className="transcript-row grid gap-2 rounded-lg border border-zinc-200 p-3 sm:grid-cols-[8rem_1fr]">
       <div>
         <p className="text-sm font-semibold text-zinc-950">{segment.speaker}</p>
         <p className="mt-1 font-mono text-xs text-zinc-500">
@@ -368,8 +369,9 @@ function TranscriptRow({ segment }: { segment: TranscriptSegment }) {
 
 function ProcessingState({ status }: { status: Meeting["status"] }) {
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
-      <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+    <div className="processing-layout grid gap-6 lg:grid-cols-[1fr_22rem]">
+      <div className="meeting-panel processing-panel rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+        <div className="processing-indicator" aria-hidden="true"><span /><span /><span /><span /><span /><span /><span /></div>
         <h2 className="text-lg font-semibold">Summary is being prepared</h2>
         <p className="mt-2 text-sm leading-6 text-zinc-600">
           Current status: {status.split("_").join(" ")}. This page will update
@@ -381,7 +383,7 @@ function ProcessingState({ status }: { status: Meeting["status"] }) {
           <Skeleton className="h-4 w-8/12" />
         </div>
       </div>
-      <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+      <div className="meeting-panel processing-side rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
         <Skeleton className="h-5 w-32" />
         <div className="mt-5 space-y-3">
           <Skeleton className="h-12 w-full" />
@@ -404,7 +406,7 @@ function FailedState({
 }) {
   return (
     <div className="flex flex-col gap-6">
-      <div className="rounded-lg border border-red-200 bg-red-50 p-5">
+      <div className="meeting-failure-panel rounded-lg border border-red-200 bg-red-50 p-5">
         <h2 className="text-lg font-semibold text-red-950">Processing failed</h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-red-800">
           Something went wrong while processing this meeting. You can retry the
@@ -426,7 +428,7 @@ function FailedState({
 
 function ErrorPanel({ message }: { message: string }) {
   return (
-    <div className="rounded-lg border border-red-200 bg-red-50 p-5 text-sm text-red-800">
+    <div className="meeting-error-panel rounded-lg border border-red-200 bg-red-50 p-5 text-sm text-red-800">
       {message}
     </div>
   );
