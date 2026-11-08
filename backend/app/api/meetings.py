@@ -2,7 +2,7 @@ import re
 import uuid
 from urllib.parse import urlparse
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Response, status
 
 from app.api.deps import get_current_user
 from app.models.meeting import Meeting, MeetingStatus
@@ -95,6 +95,51 @@ async def get_meeting(
         )
 
     return meeting
+
+
+@router.delete("/{meeting_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_meeting(
+    meeting_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    meeting_repository: MeetingRepository = Depends(get_meeting_repository),
+    meetingbaas_client: MeetingBaaSClient = Depends(get_meetingbaas_client),
+) -> Response:
+    meeting = await meeting_repository.get_by_id_for_update(meeting_id)
+    if meeting is None or meeting.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Meeting not found",
+        )
+
+    deletable_statuses = {
+        MeetingStatus.pending,
+        MeetingStatus.bot_joining,
+        MeetingStatus.in_progress,
+        MeetingStatus.completed,
+    }
+    if meeting.status not in deletable_statuses:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This meeting can no longer be deleted",
+        )
+
+    if meeting.status in {MeetingStatus.bot_joining, MeetingStatus.in_progress} and meeting.recall_bot_id:
+        try:
+            await meetingbaas_client.leave_bot(meeting.recall_bot_id)
+        except MeetingBaaSError as exc:
+            provider_status = (
+                f" (Meeting BaaS HTTP {exc.status_code})"
+                if exc.status_code is not None
+                else ""
+            )
+            detail = f"Unable to stop the meeting bot{provider_status}. {exc}"
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=detail,
+            ) from exc
+
+    await meeting_repository.delete(meeting)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{meeting_id}/summary", response_model=MeetingSummaryRead)

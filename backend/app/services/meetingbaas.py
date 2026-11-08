@@ -9,7 +9,9 @@ from app.core.config import get_settings
 
 
 class MeetingBaaSError(Exception):
-    pass
+    def __init__(self, message: str, status_code: int | None = None) -> None:
+        super().__init__(message)
+        self.status_code = status_code
 
 
 class MeetingBaaSTransientError(MeetingBaaSError):
@@ -129,6 +131,37 @@ class MeetingBaaSClient:
         stop=stop_after_attempt(3),
         reraise=True,
     )
+    async def leave_bot(self, bot_id: str) -> None:
+        try:
+            await self._request(
+                "POST",
+                f"/v2/bots/{bot_id}/leave",
+                transient_message="Meeting BaaS could not cancel the meeting bot right now",
+                failure_message="Meeting BaaS could not cancel the meeting bot",
+            )
+        except MeetingBaaSError as exc:
+            if exc.status_code == 404:
+                # The remote bot is already gone, so there is nothing left to stop.
+                return
+            if exc.status_code != 409:
+                raise
+
+            # The bot may have completed between the dashboard refresh and this request.
+            try:
+                bot_status = await self.get_bot_status(bot_id)
+            except MeetingBaaSError as status_error:
+                if status_error.status_code == 404:
+                    return
+                raise
+            if bot_status.status not in {"completed", "failed", "cancelled", "canceled"}:
+                raise exc
+
+    @retry(
+        retry=retry_if_exception_type(MeetingBaaSTransientError),
+        wait=wait_exponential(multiplier=1, min=1, max=8),
+        stop=stop_after_attempt(3),
+        reraise=True,
+    )
     async def get_recording_data(self, bot_id: str) -> MeetingBaaSRecordingData:
         response = await self._request(
             "GET",
@@ -177,10 +210,22 @@ class MeetingBaaSClient:
             raise MeetingBaaSTransientError(f"{transient_message}: request failed") from exc
 
         if response.status_code in {408, 429, 500, 502, 503, 504, 507}:
-            raise MeetingBaaSTransientError(transient_message)
+            raise MeetingBaaSTransientError(
+                transient_message,
+                status_code=response.status_code,
+            )
 
         if response.status_code >= 400:
-            raise MeetingBaaSError(failure_message)
+            detail = failure_message
+            try:
+                error_body = response.json()
+            except ValueError:
+                error_body = None
+            if isinstance(error_body, dict):
+                provider_detail = error_body.get("message") or error_body.get("error")
+                if isinstance(provider_detail, str) and provider_detail:
+                    detail = f"{detail}: {provider_detail[:240]}"
+            raise MeetingBaaSError(detail, status_code=response.status_code)
 
         try:
             data = response.json()

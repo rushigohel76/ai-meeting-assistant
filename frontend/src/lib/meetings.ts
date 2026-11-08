@@ -11,6 +11,13 @@ export function isActiveStatus(status: MeetingStatus) {
   return activeStatuses.includes(status);
 }
 
+export function canDeleteMeeting(status: MeetingStatus) {
+  return status === "pending"
+    || status === "bot_joining"
+    || status === "in_progress"
+    || status === "completed";
+}
+
 export function getMeetingTitle(meeting: Meeting) {
   if (meeting.title?.trim()) {
     return meeting.title.trim();

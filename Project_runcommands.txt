@@ -1,0 +1,11 @@
+cd /home/rushi/practice/MOM/backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+
+cd /home/rushi/practice/MOM/frontend
+npm install
+npm run dev
+
+ngrok http 8000

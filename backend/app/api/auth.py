@@ -145,6 +145,32 @@ def _issue_token_pair(response: Response, user_id: uuid.UUID) -> TokenPair:
     return TokenPair(access_token=access_token, refresh_token=refresh_token)
 
 
+@router.post("/logout")
+async def logout(response: Response) -> dict[str, str]:
+    settings = get_settings()
+    frontend_url = (settings.frontend_base_url or "").strip().lower()
+    secure_cookie = frontend_url.startswith("https")
+    is_local_frontend = any(
+        frontend_url.startswith(prefix)
+        for prefix in ("http://localhost", "http://127.0.0.1", "http://[::1]")
+    )
+    if is_local_frontend or not frontend_url:
+        samesite = "strict"
+    elif secure_cookie:
+        samesite = "none"
+    else:
+        samesite = "lax"
+
+    response.delete_cookie(
+        key=REFRESH_TOKEN_COOKIE_NAME,
+        path="/api/auth",
+        httponly=True,
+        secure=secure_cookie,
+        samesite=samesite,
+    )
+    return {"status": "logged_out"}
+
+
 def _invalid_refresh_token() -> HTTPException:
     return HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

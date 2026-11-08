@@ -1,12 +1,14 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 
 import { AppLayout } from "../components/AppLayout";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import { Skeleton } from "../components/Skeleton";
 import { StatusBadge } from "../components/StatusBadge";
 import { useToast } from "../context/ToastContext";
 import {
   ApiError,
+  deleteMeeting,
   getMeeting,
   getMeetingSummary,
   getMeetingTranscript,
@@ -22,16 +24,20 @@ import {
   formatTimestamp,
   getMeetingTitle,
   isActiveStatus,
+  canDeleteMeeting,
 } from "../lib/meetings";
 
 export function MeetingDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { showError, showSuccess } = useToast();
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [summaryData, setSummaryData] = useState<MeetingSummaryResponse | null>(null);
   const [transcriptData, setTranscriptData] = useState<MeetingTranscriptResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [retrying, setRetrying] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
 
   const meetingId = id ?? "";
@@ -115,6 +121,21 @@ export function MeetingDetailPage() {
     }
   }
 
+  async function handleDelete() {
+    if (!meeting || deleting) return;
+
+    setDeleting(true);
+    try {
+      await deleteMeeting(meeting.id);
+      showSuccess(meeting.status === "completed" ? "Meeting and its notes were deleted." : "Meeting capture was cancelled.");
+      navigate("/", { replace: true });
+    } catch (requestError) {
+      showError(requestError instanceof ApiError ? requestError.detail : "Unable to delete meeting.");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   if (!id) {
     return <Navigate to="/" replace />;
   }
@@ -141,7 +162,18 @@ export function MeetingDetailPage() {
                     <span aria-hidden="true">◷</span> Captured {formatDateTime(meeting.created_at)}
                   </p>
                 </div>
-                <StatusBadge status={meeting.status} />
+                <div className="flex shrink-0 items-center gap-3">
+                  {canDeleteMeeting(meeting.status) && (
+                    <button
+                      className="rounded-lg border border-red-300/25 px-3 py-2 text-sm font-medium text-red-200 transition hover:border-red-300/50 hover:bg-red-400/10"
+                      onClick={() => setConfirmDelete(true)}
+                      type="button"
+                    >
+                      Delete meeting
+                    </button>
+                  )}
+                  <StatusBadge status={meeting.status} />
+                </div>
               </div>
             </header>
 
@@ -161,6 +193,18 @@ export function MeetingDetailPage() {
           </>
         ) : null}
       </section>
+      {confirmDelete && meeting && (
+        <ConfirmDialog
+          busy={deleting}
+          confirmLabel="Delete meeting"
+          description={meeting.status === "completed"
+            ? `“${title}” and its summary and transcript will be permanently deleted.`
+            : `The bot for “${title}” will be stopped and this meeting capture will be cancelled.`}
+          onCancel={() => setConfirmDelete(false)}
+          onConfirm={handleDelete}
+          title={meeting.status === "completed" ? "Delete this completed meeting?" : "Cancel this meeting capture?"}
+        />
+      )}
     </AppLayout>
   );
 }

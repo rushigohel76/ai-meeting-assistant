@@ -85,8 +85,22 @@ class MeetingRepository:
         result = await self.db.execute(select(Meeting).where(Meeting.id == meeting_id))
         return result.scalar_one_or_none()
 
+    async def get_by_id_for_update(self, meeting_id: uuid.UUID) -> Meeting | None:
+        result = await self.db.execute(
+            select(Meeting).where(Meeting.id == meeting_id).with_for_update()
+        )
+        return result.scalar_one_or_none()
+
+    async def delete(self, meeting: Meeting) -> None:
+        await self.db.delete(meeting)
+        await self.db.commit()
+
     async def get_by_bot_id(self, bot_id: str) -> Meeting | None:
-        result = await self.db.execute(select(Meeting).where(Meeting.recall_bot_id == bot_id))
+        result = await self.db.execute(
+            select(Meeting)
+            .where(Meeting.recall_bot_id == bot_id)
+            .with_for_update()
+        )
         return result.scalar_one_or_none()
 
     async def get_summary_with_transcript(

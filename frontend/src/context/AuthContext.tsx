@@ -13,6 +13,7 @@ import {
   ApiError,
   configureApiAuth,
   loginRequest,
+  logoutRequest,
   refreshSession,
   setApiAccessToken,
   signupRequest,
@@ -32,13 +33,14 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [status, setStatus] = useState<AuthStatus>("unauthenticated");
+  const [status, setStatus] = useState<AuthStatus>("checking");
   // Track an in-flight refresh promise to deduplicate parallel refresh attempts
   const refreshPromiseRef = useRef<Promise<string | null> | null>(null);
   // If a refresh has definitively failed (no session), avoid retrying until user logs in
   const refreshFailedRef = useRef<boolean>(false);
 
   const logout = useCallback(() => {
+    void logoutRequest().catch(() => undefined);
     setApiAccessToken(null);
     setAccessToken(null);
     // allow future refresh attempts after an explicit logout/login cycle
@@ -90,6 +92,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
     });
   }, [accessToken, logout, refreshAccessToken]);
+
+  useEffect(() => {
+    void refreshAccessToken();
+  }, [refreshAccessToken]);
 
   const login = useCallback(async (email: string, password: string) => {
     const tokenResponse = await loginRequest(email, password);

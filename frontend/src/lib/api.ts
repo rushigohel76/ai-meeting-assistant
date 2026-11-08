@@ -135,6 +135,12 @@ export async function refreshSession(): Promise<TokenResponse> {
   });
 }
 
+export async function logoutRequest(): Promise<{ status: string }> {
+  return rawApiRequest<{ status: string }>("/api/auth/logout", {
+    method: "POST",
+  });
+}
+
 export async function loginRequest(email: string, password: string): Promise<TokenResponse> {
   return rawApiRequest<TokenResponse>("/api/auth/login", {
     method: "POST",
@@ -191,6 +197,12 @@ export async function listMeetings(limit = 50, offset = 0): Promise<Meeting[]> {
 
 export async function getMeeting(meetingId: string): Promise<Meeting> {
   return apiRequest<Meeting>(`/api/meetings/${meetingId}`);
+}
+
+export async function deleteMeeting(meetingId: string): Promise<void> {
+  return apiRequest<void>(`/api/meetings/${meetingId}`, {
+    method: "DELETE",
+  });
 }
 
 export async function getMeetingSummary(meetingId: string): Promise<MeetingSummaryResponse> {

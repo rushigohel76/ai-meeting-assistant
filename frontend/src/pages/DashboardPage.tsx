@@ -2,10 +2,11 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { AppLayout } from "../components/AppLayout";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import { StatusBadge } from "../components/StatusBadge";
 import { useToast } from "../context/ToastContext";
-import { ApiError, createMeeting, listMeetings, type Meeting } from "../lib/api";
-import { formatDateTime, getMeetingTitle, isActiveStatus } from "../lib/meetings";
+import { ApiError, createMeeting, deleteMeeting, listMeetings, type Meeting } from "../lib/api";
+import { canDeleteMeeting, formatDateTime, getMeetingTitle, isActiveStatus } from "../lib/meetings";
 
 export function DashboardPage() {
   const { showError, showSuccess } = useToast();
@@ -17,6 +18,8 @@ export function DashboardPage() {
   const [formError, setFormError] = useState("");
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "completed" | "failed">("all");
+  const [meetingToDelete, setMeetingToDelete] = useState<Meeting | null>(null);
+  const [deletingMeeting, setDeletingMeeting] = useState(false);
 
   const hasActiveMeetings = useMemo(
     () => meetings.some((meeting) => isActiveStatus(meeting.status)),
@@ -90,6 +93,22 @@ export function DashboardPage() {
       showError(message);
     } finally {
       setCreating(false);
+    }
+  }
+
+  async function handleDeleteMeeting() {
+    if (!meetingToDelete || deletingMeeting) return;
+
+    setDeletingMeeting(true);
+    try {
+      await deleteMeeting(meetingToDelete.id);
+      setMeetings((currentMeetings) => currentMeetings.filter((meeting) => meeting.id !== meetingToDelete.id));
+      showSuccess(meetingToDelete.status === "completed" ? "Meeting and its notes were deleted." : "Meeting capture was cancelled.");
+      setMeetingToDelete(null);
+    } catch (error) {
+      showError(error instanceof ApiError ? error.detail : "Unable to delete meeting.");
+    } finally {
+      setDeletingMeeting(false);
     }
   }
 
@@ -173,20 +192,44 @@ export function DashboardPage() {
           ) : (
             <div className="meeting-list">
               {filteredMeetings.map((meeting) => (
-                <Link className="meeting-row" key={meeting.id} to={`/meetings/${meeting.id}`}>
-                  <span className="meeting-row-mark" aria-hidden="true">◈</span>
-                  <span className="meeting-row-main">
-                    <strong>{getMeetingTitle(meeting)}</strong>
-                    <small><span>{formatDateTime(meeting.created_at)}</span><i />{getMeetingHost(meeting.meeting_url)}</small>
-                  </span>
+                <div className="meeting-row" key={meeting.id}>
+                  <Link aria-label={`Open ${getMeetingTitle(meeting)}`} className="meeting-row-link" to={`/meetings/${meeting.id}`}>
+                    <span className="meeting-row-mark" aria-hidden="true">◈</span>
+                    <span className="meeting-row-main">
+                      <strong>{getMeetingTitle(meeting)}</strong>
+                      <small><span>{formatDateTime(meeting.created_at)}</span><i />{getMeetingHost(meeting.meeting_url)}</small>
+                    </span>
+                  </Link>
                   <StatusBadge status={meeting.status} />
                   <span className="meeting-row-arrow" aria-hidden="true">↗</span>
-                </Link>
+                  {canDeleteMeeting(meeting.status) && (
+                    <button
+                      aria-label={`Delete ${getMeetingTitle(meeting)}`}
+                      className="meeting-delete-button"
+                      onClick={() => setMeetingToDelete(meeting)}
+                      type="button"
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
               ))}
             </div>
           )}
         </section>
       </section>
+      {meetingToDelete && (
+        <ConfirmDialog
+          busy={deletingMeeting}
+          confirmLabel="Delete meeting"
+          description={meetingToDelete.status === "completed"
+            ? `“${getMeetingTitle(meetingToDelete)}” and its summary and transcript will be permanently deleted.`
+            : `The bot for “${getMeetingTitle(meetingToDelete)}” will be stopped and this meeting capture will be cancelled.`}
+          onCancel={() => setMeetingToDelete(null)}
+          onConfirm={handleDeleteMeeting}
+          title={meetingToDelete.status === "completed" ? "Delete this completed meeting?" : "Cancel this meeting capture?"}
+        />
+      )}
     </AppLayout>
   );
 }
